@@ -13,13 +13,8 @@ Some things may not work properly if Drive version is not new enough.
 > [!WARNING]
 > Maintain regular backups of the host running Protect and its data and always make backups before updating.
 
-Use `docker compose pull` followed by `docker compose up -d`.  
-Protect should take care of migrating itself to a new version automatically (cameras firmware will also auto-update).  
-**Never downgrade versions as this may break Protect.**
-
-When Protect updates to a new version, this could introduce new firmware for the cameras, which will start updating.  
-The camera firmware update could potentially make the camera no longer work with previous versions of Protect.  
-Generally, camera firmware is stable, but should issues occur please note that downgrading camera firmware is very hard or not possible sometimes.
+Drive should take care of migrating itself to a new version automatically.  
+**Never downgrade versions as this may break Drive.**
 
 ### Config
 
