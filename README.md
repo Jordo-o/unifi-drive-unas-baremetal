@@ -1,36 +1,12 @@
 # UniFi Drive install script for arm64
 
-<a href="https://www.buymeacoffee.com/dciancu" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 42px !important;width: 151.9px !important;" ></a>
-
-Run UniFi Protect UNVR in Docker on ARM64 hardware.
-
-> [!IMPORTANT]
-> Disconnect the docker host from the internet during the initial console setup, else it will auto update and may
-> break the container.  
-> Also remember to disable auto update of the console and applications in the console settings.  
-> Make sure you have read the below sections on [Issues running systemd inside docker](#issues-running-systemd-inside-docker) and [Issues with remote access](#issues-with-remote-access).  
-> Protect requires at least 4 GB RAM in order to boot and run correctly.  
-> It is recommended to only run Protect with no other services/images when running on limited hardware (like Raspberry Pi).  
-> For macOS use `docker-compose.macos.yml`.
-
-> [!TIP]
-> Works on Raspberry Pi (tested with Pi 4 model B 4GB on Debian 12 Bookworm).  
-> Protect 5.0 added support for third-party cameras via ONVIF, [see here](https://help.ui.com/hc/en-us/articles/26301104828439-Third-Party-Cameras-in-UniFi-Protect).
+Run UniFi Drive UNAS in Docker on ARM64 hardware.
 
 ## Usage
-
-**Docker Hub Image: [dciancu/unifi-protect-unvr-docker-arm64](https://hub.docker.com/r/dciancu/unifi-protect-unvr-docker-arm64)**  
-Tags:
-- **`Protect specific version - recommended`** - alias of stable and edge tags with Protect version (v5/v4 etc.)
-- `stable` - uses Protect version packaged in UNVR firmware
-- `edge` - uses latest Protect version
-- `Firmware (UniFi OS) specific version` - uses Protect version packaged in UNVR firmware (alias of stable tag)
-
 For the latest features and fixes always use the latest version.  
-Some cameras may not adopt/work properly if Protect version is not new enough.  
+Some things may not work properly if Drive version is not new enough.  
 
-Run the container using `docker compose` with the provided `docker-compose.yml`.  
-**Make sure you have read the below sections on [Issues running systemd inside docker](#issues-running-systemd-inside-docker) and [Issues with remote access](#issues-with-remote-access).**
+**Make sure you have read the below section [Issues with remote access](#issues-with-remote-access).**
 
 ### Updates
 
@@ -47,42 +23,15 @@ Generally, camera firmware is stable, but should issues occur please note that d
 
 ### Config
 
-Create a new `docker-compose.override.yml` file and adjust below content for your configuration:
-```
-services:
-  unifi-protect:
-    image: dciancu/unifi-protect-unvr-docker-arm64:v5 # change tag here to use a different version
-    environment:
-      - STORAGE_DISK=/dev/sda
-# If needed to mount device inside container.
-#    devices:
-#      - /dev/sda:/dev/sda
-# Set DEBUG mode to enable all debug options below.
-#      - DEBUG=true
-# Set DEBUG_STORAGE to enable storage disk operations logging.
-#      - DEBUG_STORAGE=true
-# Set DEBUG_UNIFI_CORE to enable unifi-core debug log level.
-#      - DEBUG_UNIFI_CORE=true
-```
-`STORAGE_DISK` should point to your disk holding the `storage` folder volume (see `docker-compose.yml`). **Make sure you have access to the device inside the container**, or mount it using `devices` key in `docker-compose.override.yml`.  
-Protect video is at `/srv` volume inside container.
-
-### macOS
-
-Use `docker-compose.macos.yml`.
-```
-docker compose -f docker-compose.macos.yml -f docker-compose.override.yml up -d
-```
-
-Remote access via the cloud does not work with Docker on macOS, see https://github.com/dciancu/unifi-protect-unvr-docker-arm64/issues/25.  
-Use a Debian VM instead (try with [UTM](https://mac.getutm.app/), it is open source).
+`STORAGE_DISK` should point to your disk holding the `storage` folder volume.
+Drive data is at `/srv` volume.
 
 ### Network
 
 > [!IMPORTANT]
 > Protect requires `IPv6` enabled (even if blocked by firewall or not routed) and make sure ports used by Protect are not in use by other services/images (`80`, `443` etc.).  
 
-Real UNVR has 2 network interfaces (`enp0s1` and `enp0s2`), if you mask your real network interface with `enp0s2` (see [Issues with remote access](#issues-with-remote-access)), then you only need to add `enp0s1`.  
+Real UNAS has 2 network interfaces (`enp0s1` and `enp0s2`), if you mask your real network interface with `enp0s2` (see [Issues with remote access](#issues-with-remote-access)), then you only need to add `enp0s1`.  
 For Debian, Ubuntu and other alike you can add a dummy interface with `ip link add enp0s1 type dummy`, and to be persistent across reboots, add to host network config at `/etc/network/interfaces`:
 ```
 auto enp0s1
@@ -96,7 +45,7 @@ This further helps mimic the UNVR hardware which Protect expects to be running o
 ## Setup
 
 > [!IMPORTANT]
-> Protect requires at least 4 GB RAM in order to boot and run correctly.  
+> Drive requires at least 4 GB RAM in order to boot and run correctly.  
 
 When you run the image for the first time, you have to go through the initial console setup, find the host IP address and
 navigate to `http://host-ip`.  
@@ -105,32 +54,13 @@ and proceed with the offline mode setup.
 After the initial setup, got to console settings and disable auto update of the console and applications.  
 The auto-update does not work and may break the container.
 
-You can now proceed to add cameras to Protect.
-
 ## Logs
 
 You can check logs using `docker compose logs -f` and files inside container at `/var/log`.  
 Inside the container you can check logs using `journalctl -f`.  
-`unifi-protect` logs are at `/srv/unifi-protect/logs`.  
+`unifi-drive` logs are at `/srv/unifi-drive/logs`.  
 `unifi-core` logs are at `/data/unifi-core/logs`.  
 If `DEBUG_STORAGE` is enabled, logs are at `/var/log/storage_disk_debug.log`.
-
-## Issues running Systemd inside Docker
-
-If you're getting the following error or any `systemd` error when starting container:  
-Also check logs on host when starting container.
-```
-Failed to create /init.scope control group: Read-only file system
-Failed to allocate manager object: Read-only file system
-[!!!!!!] Failed to allocate manager object.
-Exiting PID 1...
-```
-
-Boot the host system with kernel parameter `systemd.unified_cgroup_hierarchy=0`.
-
-Also, no output when running `doker compose logs` means most likely it is due to the above error.
-
-See: https://github.com/moby/moby/issues/42275
 
 ## Issues with remote access
 
@@ -175,9 +105,6 @@ Set `ALL_DEBS` when building firmware to extract and save all packages.
 This project has been greatly inspired from below projects.
 
 [markdegrootnl/unifi-protect-arm64](https://github.com/markdegrootnl/unifi-protect-arm64) - original project  
-[Top-Cat/unifi-protect-arm64](https://github.com/Top-Cat/unifi-protect-arm64) - fork  
-[kiwimato/unifi-protect-arm64](https://github.com/kiwimato/unifi-protect-arm64) - fork  
-[snowsnoot/unifi-unvr-arm64](https://github.com/snowsnoot/unifi-unvr-arm64) - fork
 
 ## Disclaimer
 
